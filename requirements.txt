@@ -1,0 +1,7 @@
+
+django
+cliff
+gunicorn
+whitenoise
+logbook
+termui

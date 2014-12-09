@@ -1,0 +1,13 @@
+
+include makefile
+include requirements.txt
+include bootstrap.py
+include buildout.cfg
+include tox.ini
+include LICENSE
+include README.rst
+recursive-include tests *
+recursive-include docs *
+recursive-include instance/templates *
+
+
