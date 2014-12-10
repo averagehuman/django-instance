@@ -37,9 +37,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.tz",
     "django.core.context_processors.request",
 )
-DATABASE_ROUTERS = [
-    'instance.router.DefaultInstanceRouter',
-]
 MIDDLEWARE_CLASSES = []
 
 ###########

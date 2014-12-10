@@ -7,6 +7,7 @@ import shutil
 from django.utils.text import slugify
 from django.utils.functional import LazyObject, empty
 from django.core.management import call_command
+from django.db import DEFAULT_DB_ALIAS
 
 from .utils import (
     pathexists, pathjoin, dirname, mkdir, abspath, expanduser,
@@ -18,14 +19,12 @@ here = dirname(abspath(__file__))
 DATA_ROOT_VARIABLE = "DJANGO_APPLICATION_ROOT"
 DB_NAME_VARIABLE = "DJANGO_DATA_DB_NAME"
 DB_PATH_VARIABLE = "DJANGO_DATA_DB_PATH"
-DB_CONNECTION_VARIABLE = "DJANGO_DB_CONNECTION"
 SITE_UID_VARIABLE = "SITE_UID"
 SITE_STORAGE_ROOT_VARIABLE = "SITE_STORAGE_ROOT"
 DATA_DIR = '.django'
 DEFAULT_DATA_ROOT = pathjoin(expanduser("~"), DATA_DIR)
 DEFAULT_SITE_UID = "default"
 DEFAULT_DB_NAME = "data.db"
-DEFAULT_DB_CONNECTION = '__django__'
 
 
 def assert_configured(fn):
@@ -125,7 +124,6 @@ class Settings(LazyObject):
             env['STATIC_URL'] = '/assets/'
         dbname = env.get(DB_NAME_VARIABLE, DEFAULT_DB_NAME)
         env.setdefault(DB_PATH_VARIABLE, pathjoin(root, dbname))
-        env.setdefault(DB_CONNECTION_VARIABLE, DEFAULT_DB_CONNECTION)
         mkdir(store)
         mkdir(pathjoin(store, 'static'))
         mkdir(pathjoin(store, 'templates'))
@@ -134,32 +132,29 @@ class Settings(LazyObject):
 
     def _configure_database(self, env):
         """Create sites database if it doesn't exist"""
+        db_settings = env.get('DATABASES')
+        if db_settings:
+            #assume database already exists and is synced
+            return
+        db_path = env[DB_PATH_VARIABLE]
+        mkdir(dirname(db_path))
+        db_settings = {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': db_path
+        }
+        env['DATABASES'] = {
+            'default': db_settings,
+        }
+        # if DATABASES is {} then there may already be a dummy connection at
+        # this point
         from django.db import connections
-        from django.db.utils import ConnectionDoesNotExist
         try:
-            # there may already be a dummy connection at this point
             del connections['default']
         except:
             pass
-        connection = env[DB_CONNECTION_VARIABLE]
-        env.setdefault('DATABASES', {})
-        try:
-            connections[connection]
-        except ConnectionDoesNotExist:
-            db_path = env[DB_PATH_VARIABLE]
-            mkdir(dirname(db_path))
-            db_settings = {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': db_path
-            }
-            env['DATABASES'][connection] = db_settings
-            env['DATABASES'].setdefault('default', db_settings)
-            connections.databases[connection] = db_settings
-            if not pathexists(db_path):
-                call_command(
-                    'migrate', database=connection, interactive=False
-                )
-        connections.databases['default'] = env['DATABASES']['default']
+        connections.databases['default'] = db_settings
+        if not pathexists(db_path):
+            call_command('migrate', interactive=False)
 
     def _create_or_update_site(self, uid, env):
         from instance.models import DjangoSite
