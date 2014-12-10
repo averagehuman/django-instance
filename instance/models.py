@@ -72,19 +72,7 @@ class DjangoSite(models.Model):
 
     def save(self, *args, **kwargs):
         if not hasattr(self, 'uid') or not self.uid:
-            uid = slugify(text_type(self.name))
-#            suffix = ''
-#            i = 0
-#            while True:
-#                key = uid+suffix
-#                try:
-#                    DjangoSite.objects.get(uid__iexact=key)
-#                except DjangoSite.DoesNotExist:
-#                    break
-#                i += 1
-#                suffix = '-%s' % i
-#            self.uid = key
-            self.uid = uid
+            self.uid = slugify(text_type(self.name))
         fqdn = urlparse(self.fqdn)
         if fqdn.scheme == 'https':
             self.is_https = True
