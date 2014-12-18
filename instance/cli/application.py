@@ -84,13 +84,14 @@ class UI(App):
             '-H', '--home',
             action='store',
             default=None,
-            help="the application root directory, defaults to $HOME/.django",
+            help="the application root directory, defaults to $PWD/.django",
         )
         parser.add_argument(
             '--settings',
             action='store',
             default=None,
-            help="the DJANGO_SETTINGS_MODULE value",
+            help="if not already set, the DJANGO_SETTINGS_MODULE environment"
+            " variable will be set to this value",
         )
         return parser
 

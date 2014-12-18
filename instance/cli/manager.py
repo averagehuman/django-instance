@@ -49,6 +49,27 @@ class CurrentSiteManager(object):
         self._site = site
         self._cls = DjangoSite
 
+    def init_site(self, uid, name, fqdn=None, title=None, strict=True):
+        cls = self._cls
+        try:
+            site = cls.objects.get(uid__iexact=uid)
+        except cls.DoesNotExist:
+            site = cls.objects.create(
+                uid=uid, name=name, title=title or name,
+                fqdn=fqdn,
+            )
+            log.info("created site '%s'" % site)
+        else:
+            if strict:
+                raise UIError("Site exists '%s'" % uid)
+        settings.init_site(site)
+
+    def remove_site(self, uid):
+        try:
+            self._cls.objects.get(uid__iexact=uid).delete()
+        except self._cls.DoesNotExist:
+            raise UIError("invalid site uid: '%s'" % uid)
+
     @property
     def site(self):
         if self._site is None:

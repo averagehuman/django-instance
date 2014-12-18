@@ -39,8 +39,8 @@ README = read('README.rst')
 CHANGELOG = read('docs/changelog.rst')
 ENTRY_POINTS = '''
 [console_scripts]
-instance=instance.cli:main
-django=instance.cli:manage
+django=instance.cli:main
+django-manage=instance.cli:manage
 django-server=instance.cli:serve
 '''
 REQUIRES = [
