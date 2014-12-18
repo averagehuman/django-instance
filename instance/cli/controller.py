@@ -42,14 +42,17 @@ class Writer(object):
         self.stream.write(text.encode(self.encoding))
         self.stream.write('\n')
 
-class CurrentSiteManager(object):
+class SiteController(object):
 
     def __init__(self, site=None):
         from instance.models import DjangoSite
         self._site = site
         self._cls = DjangoSite
 
-    def init_site(self, uid, name, fqdn=None, title=None, strict=True):
+    def exists(self, uid):
+        return self._cls.objects.filter(uid__iexact=uid).count() > 0
+
+    def init_site(self, uid, name, fqdn, title=None):
         cls = self._cls
         try:
             site = cls.objects.get(uid__iexact=uid)
@@ -59,10 +62,11 @@ class CurrentSiteManager(object):
                 fqdn=fqdn,
             )
             log.info("created site '%s'" % site)
-        else:
-            if strict:
-                raise UIError("Site exists '%s'" % uid)
         settings.init_site(site)
+        self.set_default(site.uid)
+
+    def set_default(self, uid):
+        self._cls.objects.set_default(uid)
 
     def remove_site(self, uid):
         try:
@@ -78,7 +82,8 @@ class CurrentSiteManager(object):
 
     def itersites(self):
         for obj in self._cls.objects.all():
-            yield obj.uid, obj.name, obj.fqdn
+            default = '   *' if obj.is_default else ''
+            yield obj.pk, obj.uid, obj.name, obj.fqdn, default
 
     def call_django_command(self, cmd, *args, **kwargs):
         return call_command(cmd, *args, **kwargs)

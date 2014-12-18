@@ -20,7 +20,7 @@ except:
 from instance import __version__
 from instance.utils import import_object, pathjoin, expanduser
 from instance.conf import settings, DATA_ROOT_VARIABLE, DB_PATH_VARIABLE
-from .manager import CurrentSiteManager
+from .controller import SiteController
 
 registry = {}
 
@@ -76,7 +76,7 @@ class UI(App):
             )
         )
         super(UI, self).__init__(*args, **kwargs)
-        self._manager = None
+        self._ctl = None
 
     def build_option_parser(self, *args, **kwargs):
         parser = super(UI, self).build_option_parser(*args, **kwargs)
@@ -96,10 +96,10 @@ class UI(App):
         return parser
 
     @property
-    def manager(self):
-        if self._manager is None:
-            self._manager = CurrentSiteManager()
-        return self._manager
+    def ctl(self):
+        if self._ctl is None:
+            self._ctl = SiteController()
+        return self._ctl
 
     def initialize_app(self, argv):
         overrides = {}

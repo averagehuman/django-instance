@@ -14,8 +14,8 @@ from cliff.command import Command
 from cliff.lister import Lister
 
 from instance.cli.application import CommandType
-from instance.cli.manager import UIError
-from instance.utils import pathjoin, pathexists, urlparse
+from instance.cli.controller import UIError
+from instance.utils import pathjoin, pathexists, text_type, urlparse
 from instance.conf import settings
 
 log = logbook.Logger(__name__)
@@ -32,7 +32,7 @@ class Init(Command):
             action='store',
             nargs='?',
             default=None,
-            help="the name of the site to serve",
+            help="a name or unique id for the site",
         )
         parser.add_argument(
             '--uid',
@@ -57,14 +57,7 @@ class Init(Command):
             action='store_false',
             dest='interactive',
             default=True,
-            help="prompt user for unspecified site data",
-        )
-        parser.add_argument(
-            '-i', '--ignore-existing',
-            action='store_false',
-            dest='strict',
-            default=True,
-            help="do nothing if a site with this name exists",
+            help="don't prompt user for unspecified parameters",
         )
         return parser
 
@@ -74,16 +67,16 @@ class Init(Command):
             if not args.interactive:
                 raise UIError("required argument 'site'")
             name = prompt("Enter a name for the Site")
-        uid = args.uid or slugify(name)
+        uid = args.uid or slugify(text_type(name))
         fqdn = args.fqdn or "127.0.0.1:8000"
         title = args.title or name
-        if args.interactive:
+        if args.interactive and not self.app.ctl.exists(uid):
             if not args.uid:
                 uid = prompt(
                     "Enter a unique identifier for the Site",
                     default=uid,
                 )
-            if uid != slugify(uid):
+            if uid != slugify(text_type(uid)):
                 raise UIError("invalid identifier '%s'" % uid)
             if not args.fqdn:
                 fqdn = prompt(
@@ -95,7 +88,7 @@ class Init(Command):
                     "Enter a display title for the Site",
                     default=title,
                 )
-        self.app.manager.init_site(uid, name, fqdn, title, args.strict)
+        self.app.ctl.init_site(uid, name, fqdn, title)
 
 @six.add_metaclass(CommandType)
 class Ls(Lister):
@@ -103,8 +96,8 @@ class Ls(Lister):
 
     def take_action(self, args):
         return (
-            ('ID', 'Name', 'Domain'),
-            self.app.manager.itersites(),
+            ('PK', 'ID', 'Name', 'Domain', 'Default'),
+            self.app.ctl.itersites(),
         )
 
 @six.add_metaclass(CommandType)
@@ -117,10 +110,10 @@ class Rm(Command):
             'uid',
             action='store',
             default=None,
-            help="the unique identifier (slug) of the site to delete",
+            help="the unique identifier (slug or pk) of the site to delete",
         )
         return parser
 
     def take_action(self, args):
-        self.app.manager.remove_site(args.uid)
+        self.app.ctl.remove_site(args.uid)
 

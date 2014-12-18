@@ -30,6 +30,30 @@ def _simple_domain_name_validator(value):
             code='invalid',
         )
 
+class DjangoSiteManager(models.Manager):
+
+    def set_default(self, uid):
+        # ensure valid uid
+        site = self.get(uid__iexact=uid)
+        # there can be only one
+        self.get_queryset().exclude(uid__iexact=uid).update(is_default=False)
+        if not site.is_default:
+            site.is_default = True
+            site.save(update_fields=['is_default'])
+
+    def get_default(self):
+        try:
+            site = self.filter(is_default=True)[0]
+        except IndexError:
+            try:
+                site = self.all()[0]
+            except IndexError:
+                site = None
+            else:
+                site.is_default = True
+                site.save()
+        return site
+
 @python_2_unicode_compatible
 class DjangoSite(models.Model):
 
@@ -47,6 +71,8 @@ class DjangoSite(models.Model):
     settings_module = models.CharField(
         max_length=100, default="instance.settings"
     )
+    is_default = models.BooleanField(default=False)
+    objects = DjangoSiteManager()
 
     class Meta:
         db_table = 'django_site'

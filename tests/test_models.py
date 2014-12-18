@@ -5,9 +5,7 @@ import pytest
 #from django.exception import
 def test_site_create_delete(env):
     from instance.models import DjangoSite
-    assert sorted(obj.uid for obj in DjangoSite.objects.all()) == [
-        "instance-test",
-    ]
+    assert sorted(obj.uid for obj in DjangoSite.objects.all()) == []
     site0 = DjangoSite.objects.create(
         name="Example Site",
     )
@@ -18,7 +16,6 @@ def test_site_create_delete(env):
     assert site0.url == 'http://127.0.0.1:8000'
     assert sorted(obj.uid for obj in DjangoSite.objects.all()) == [
         "example-site",
-        "instance-test",
     ]
     # uid must be unique
     with pytest.raises(django.db.IntegrityError) as e:
@@ -38,7 +35,6 @@ def test_site_create_delete(env):
     assert site1.url == 'https://127.0.0.1:8000'
     assert sorted(obj.uid for obj in DjangoSite.objects.all()) == [
         "example-site",
-        "instance-test",
         "other-example",
     ]
     # create with https:// domain
@@ -53,14 +49,14 @@ def test_site_create_delete(env):
     assert site2.url == "https://assets.mydomain.com/other-example"
     assert sorted(obj.uid for obj in DjangoSite.objects.all()) == [
         "example-site",
-        "instance-test",
         "next-example",
         "other-example",
     ]
     site0.delete()
     site1.delete()
     site2.delete()
-    assert sorted(obj.uid for obj in DjangoSite.objects.all()) == [
-        "instance-test",
-    ]
+    assert sorted(obj.uid for obj in DjangoSite.objects.all()) == []
+
+def test_get_set_default(env):
+    pass
 
