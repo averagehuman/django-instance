@@ -9,9 +9,6 @@ from instance.cli.application import UI
 from instance.utils import BytesIO
 
 here = os.path.abspath(os.path.dirname(__file__))
-data_root = os.path.abspath(
-    os.path.join(here, os.pardir, '.django')
-)
 SITE_UID = 'instance-test'
 
 @pytest.fixture(scope="session")
@@ -21,7 +18,7 @@ def env():
     assert not settings.configured
     assert not django_settings.configured
     settings.configure(overrides={
-        DATA_ROOT_VARIABLE: data_root,
+        DATA_ROOT_VARIABLE: here,
         SITE_UID_VARIABLE: SITE_UID
     })
     return settings

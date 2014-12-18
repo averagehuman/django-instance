@@ -11,7 +11,7 @@ def ensure_default_environ(fn):
         )
         os.environ.setdefault(
             'DJANGO_APPLICATION_ROOT',
-            os.path.join(os.getcwd(), '.django')
+            os.getcwd(),
         )
         return fn(*args, **kwargs)
     return wrapper

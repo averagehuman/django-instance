@@ -26,5 +26,4 @@ env.read(cfgfile)
 
 DEBUG = env('DEBUG')
 SECRET_KEY = env('SECRET_KEY')
-SITE_UID = env('SITE_UID')
 

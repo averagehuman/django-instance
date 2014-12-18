@@ -95,7 +95,7 @@ class Settings(LazyObject):
             os.environ.get(DATA_ROOT_VARIABLE, DEFAULT_DATA_ROOT)
         )
         if not root:
-            root = env[DATA_ROOT_VARIABLE] = DEFAULT_DATA_ROOT
+            env[DATA_ROOT_VARIABLE] = DEFAULT_DATA_ROOT
 
     def _configure_database(self, env):
         """Create sites database if it doesn't exist"""
@@ -131,25 +131,23 @@ class Settings(LazyObject):
         if not siteid:
             from instance.models import DjangoSite
             site = DjangoSite.objects.get_default()
-            siteid = site.uid
-        siteid = env[SITE_UID_VARIABLE] = siteid or DEFAULT_SITE_UID
+            if site:
+                siteid = site.uid
+        if not siteid:
+            return
+        env[SITE_UID_VARIABLE] = siteid
         root = env[DATA_ROOT_VARIABLE]
-        store = env.setdefault(
-            SITE_STORAGE_ROOT_VARIABLE, pathjoin(root, siteid)
+        home = env.setdefault(
+            SITE_STORAGE_ROOT_VARIABLE, pathjoin(root, site.uid)
         )
         if not env.get('MEDIA_ROOT'):
-            env['MEDIA_ROOT'] = pathjoin(store, 'media')
+            env['MEDIA_ROOT'] = pathjoin(home, 'media')
         if not env.get('STATIC_ROOT'):
-            env['STATIC_ROOT'] = pathjoin(store, 'assets')
+            env['STATIC_ROOT'] = pathjoin(home, 'assets')
         if not env.get('MEDIA_URL'):
             env['MEDIA_URL'] = '/media/'
         if not env.get('STATIC_URL'):
             env['STATIC_URL'] = '/assets/'
-        mkdir(store)
-        mkdir(pathjoin(store, 'static'))
-        mkdir(pathjoin(store, 'templates'))
-        mkdir(env["STATIC_ROOT"])
-        mkdir(env["MEDIA_ROOT"])
 
     @assert_configured
     def get_current_site(self):
@@ -166,12 +164,18 @@ class Settings(LazyObject):
             site = self._site_cache[uid] = DjangoSite.objects.get(
                 uid__iexact=env[SITE_UID_VARIABLE]
             )
-        return site
+        self.init_site(site)
+        return self.site
 
+    @assert_configured
     def init_site(self, site):
-        home = settings[SITE_STORAGE_ROOT_VARIABLE]
-        site_template_dir = pathjoin(home, 'templates')
+        env = self._wrapped
+        root = env[DATA_ROOT_VARIABLE]
+        home = pathjoin(root, site.uid)
         mkdir(home)
+        mkdir(pathjoin(home, 'static', 'media'))
+        mkdir(pathjoin(home, 'static', 'assets'))
+        site_template_dir = pathjoin(home, 'templates')
         mkdir(site_template_dir)
         # create site-specfic css file
         styles = pathjoin(home, 'static', 'site.css')
